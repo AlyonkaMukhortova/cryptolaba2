@@ -7,30 +7,114 @@
 #include <iso646.h>
 #include <getopt.h>
 
+#define SUCCESS 0
+#define NO_KEY -1
+#define NO_MODE -2
+#define WRONG_VALUE -3
 
-const struct option* init_aes32(){
-  const struct option* options = (struct option*)malloc(9 * sizeof(struct option));
-  //options = {
-  //  {"help", no_argument, NULL, 0},
-  //  {"version", no_argument, NULL, 0},
-    //{"mode", required_argument, NULL, 0},
-    //{"enc", no_argument, NULL, 0},
-    //{"dec", no_argument, NULL, 0},
-    //{"key", required_argument, NULL, 0},
-    //{"iv", required_argument, NULL, 0},
-    //{"debug", no_argument, NULL, 0},
-    //{NULL, 0, NULL, 0}
-  //};
-  //struct options[0] = {"help", no_argument, NULL, 0};
-  //struct options[1] = {"version", no_argument, NULL, 0};
-  //struct options[2] = {"mode", required_argument, NULL, 0};
-  //struct options[3] = {"enc", no_argument, NULL, 0};
-  //struct options[4] = {"dec", no_argument, NULL, 0};
-  //struct options[5] = {"key", required_argument, NULL, 0};
-  //struct options[6] = {"iv", required_argument, NULL, 0};
-  //struct options[7] = {"debug", no_argument, NULL, 0};
-  //struct options[8] = {NULL, 0, NULL, 0};
-  return options;
+
+
+unsigned int hex_from_str(char* arg, int* err){
+  unsigned int res = 0;
+  for (int i = 0; i < strlen(arg); i++){
+    res *= 16;
+    unsigned int a = 0;
+    if (arg[i] >= '0' && arg[i] <= '9'){
+      a = arg[i] - '0';
+    }
+    else if (arg[i] >= 'a' && arg[i] <= 'f'){
+      a = arg[i] - 'a' + 10;
+    }
+    else{
+      *err = WRONG_VALUE;
+      return res;
+    }
+    res += a;
+  }
+  return res;
+}
+
+
+int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned int* key){
+  const struct option long_options[] = {
+    {"help", no_argument, NULL, 'h'},
+    {"version", no_argument, NULL, 'v'},
+    {"mode", required_argument, NULL, 'm'},
+    {"enc", no_argument, NULL, 'e'},
+    {"dec", no_argument, NULL, 'd'},
+    {"key", required_argument, NULL, 'k'},
+    {"iv", required_argument, NULL, 'i'},
+    {"debug", no_argument, NULL, 'g'},
+    {NULL, 0, NULL, 0}
+  };
+  const char* short_options = "hvm:edk:i:g";
+  int now_optind = 0;
+  char* mode = NULL;
+  int crypt_mode = 0;
+  while (optind < argc - 1){
+    now_optind = optind;
+    int cc = getopt_long(argc, argv, short_options, long_options, NULL);
+    char c = cc;
+    printf("%c\n", c);
+    printf("%d\n", cc);
+    switch (c) {
+      case 'h': {
+        printf("-v, --version for software version\n");
+        printf("-m, --mode=[value] for mode choice. (ecb/cbc)\n");
+        printf("-e, --enc flag for encryption mode\n");
+        printf("-d, --dec flag for decryption mode\n");
+        printf("-k, --key=[value] for key init\n");
+        printf("-i, --iv=[value] for initialization vector\n");
+        printf("-g, --debug for intermediate values\n");
+        continue;
+      }
+      case 'v':{
+        printf("Software version 1.0\n");
+        continue;
+      }
+      case 'm':{
+        printf("%s\n", optarg);
+        if (strcmp(++optarg, "ecb") == 0){
+          mode = optarg;
+        }
+        else if (strcmp(optarg, "cbc") == 0){
+          mode = optarg;
+        }
+        else{
+          return WRONG_VALUE;
+        }
+      }
+      case 'e':{
+        crypt_mode = 1;
+      }
+      case 'd':{
+        crypt_mode = 2;
+      }
+      case 'k':{
+        int err = 0;
+        *key = hex_from_str(optarg, &err);
+        if (err == WRONG_VALUE){
+          return WRONG_VALUE;
+        }
+        printf("%x\n", *key);
+      }
+      case 'i':{
+        int err1 = 0;
+        unsigned int iv = hex_from_str(optarg, &err1);
+        if (err1 == WRONG_VALUE){
+          return WRONG_VALUE;
+        }
+      }
+      case 'g':{
+        return 0;
+      }
+      case -1:{
+        return -1;
+      }
+    }
+    return 0;
+  }
+  return 0;
 }
 
 
@@ -146,29 +230,13 @@ unsigned int* key_calculation (unsigned int k, unsigned int* key){
 
 
 int main (int argc, char** argv) {
-  const struct option long_options[] = {
-    {"help", no_argument, NULL, 'h'},
-    {"version", no_argument, NULL, 'v'},
-    {"mode", required_argument, NULL, 'm'},
-    {"enc", no_argument, NULL, 'e'},
-    {"dec", no_argument, NULL, 'd'},
-    {"key", required_argument, NULL, 'k'},
-    {"iv", required_argument, NULL, 'i'},
-    {"debug", no_argument, NULL, 'g'},
-    {NULL, 0, NULL, 0}
-  };
-  //const struct option* long_options = init_aes32();
   unsigned int* key = (unsigned int*)calloc(3, sizeof(unsigned int));
   unsigned int k, p;
   unsigned int* s_substitution = load(argv[argc - 1], &p);
-  int c = getopt_long(argc, argv, "hvm:edk:i:g", long_options, NULL);
-  printf("Enter key --> ");
-  scanf("%d",&k);
+  int a = analyse_input(argc, argv, s_substitution, &k);
   key = key_calculation(k, key);
   unsigned int c0 = p ^ key[0];
   p = cipher(s_substitution, c0, key);
   printf("%x\n", p);
-  printf("C = %d\n", c);
-  printf("optind = %s\n", optarg);
   free(s_substitution);
 }
