@@ -35,7 +35,7 @@ unsigned int hex_from_str(char* arg, int* err){
 }
 
 
-int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned int* key){
+int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned int* key, unsigned int* iv){
   const struct option long_options[] = {
     {"help", no_argument, NULL, 'h'},
     {"version", no_argument, NULL, 'v'},
@@ -74,7 +74,7 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
       }
       case 'm':{
         printf("%s\n", optarg);
-        if (strcmp(++optarg, "ecb") == 0){
+        if (strcmp(optarg, "ecb") == 0){
           mode = optarg;
         }
         else if (strcmp(optarg, "cbc") == 0){
@@ -83,12 +83,15 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
         else{
           return WRONG_VALUE;
         }
+        continue;
       }
       case 'e':{
         crypt_mode = 1;
+        continue;
       }
       case 'd':{
         crypt_mode = 2;
+        continue;
       }
       case 'k':{
         int err = 0;
@@ -97,13 +100,15 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
           return WRONG_VALUE;
         }
         printf("%x\n", *key);
+        continue;
       }
       case 'i':{
         int err1 = 0;
-        unsigned int iv = hex_from_str(optarg, &err1);
+        *iv = hex_from_str(optarg, &err1);
         if (err1 == WRONG_VALUE){
           return WRONG_VALUE;
         }
+        continue;
       }
       case 'g':{
         return 0;
@@ -136,6 +141,21 @@ unsigned int** circular_shift(unsigned int** a, int count){
         a[shift_num][k] = a[shift_num][k+1];
       }
       a[shift_num][count - 1] = ptr;
+    }
+  }
+  return a;
+}
+
+
+unsigned int** circular_backshift(unsigned int** a, int count){
+  for (int shift_num = 0; shift_num < count; shift_num++){
+    for (int j = 0; j < shift_num; j++){
+      unsigned int ptr = a[shift_num][count - 1];
+      for (int k = count - 1; k > 0; k--){
+        a[shift_num][k] = a[shift_num][k-1];
+        printf("%d\n", k);
+      }
+      a[shift_num][0] = ptr;
     }
   }
   return a;
@@ -179,6 +199,20 @@ unsigned int** s_block(unsigned int** a, unsigned int*s_substitution, int count)
 }
 
 
+unsigned int** back_s_block(unsigned int** a, unsigned int*s_substitution, int count){
+  for (int i = 0; i < count; i++){
+    for (int j = 0; j < count; j++){
+      int k = 0;
+      while(a[i][j] != s_substitution[k]){
+        k++;
+      }
+      a[i][j] = k;
+    }
+  }
+  return a;
+}
+
+
 unsigned int* load(char* file_name, unsigned int* p){
   FILE* fd;
   fd = fopen(file_name, "r");
@@ -194,7 +228,7 @@ unsigned int* load(char* file_name, unsigned int* p){
 }
 
 
-unsigned int cipher_round(unsigned int* s_substitution, unsigned int p, unsigned int key){
+unsigned int encryption_ecb_round(unsigned int* s_substitution, unsigned int p, unsigned int key){
   int count = 2;
   unsigned int** k = eight_bit_blocks(key, count);
   unsigned int** a = eight_bit_blocks(p, count);
@@ -202,16 +236,94 @@ unsigned int cipher_round(unsigned int* s_substitution, unsigned int p, unsigned
   a = circular_shift(a, count);
   a = xor_key(a, k, count);
   p = merge(a, count);
-  return p;
   free(a);
   free(k);
+  return p;
+
 }
 
 
-unsigned int cipher(unsigned int* s_substitution, unsigned int p, unsigned int* key){
+unsigned int decryption_ecb_round(unsigned int* s_substitution, unsigned int p, unsigned int key){
+  int count = 2;
+  unsigned int** k = eight_bit_blocks(key, count);
+  printf("8 bit blocks key - DONE\n");
+  unsigned int** a = eight_bit_blocks(p, count);
+  printf("8 bit blocks text - DONE\n");
+  a = xor_key(a, k, count);
+  printf("XOR with key - DONE\n");
+  a = circular_backshift(a, count);
+  printf("Backshift - DONE\n");
+  a = back_s_block(a, s_substitution, count);
+  printf("S-Block - DONE\n");
+  p = merge(a, count);
+  free(a);
+  free(k);
+  return p;
+}
+
+
+unsigned int encryption_cbc_round(unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv){
+  int count = 2;
+  p = p ^ iv;
+  unsigned int** k = eight_bit_blocks(key, count);
+  unsigned int** a = eight_bit_blocks(p, count);
+  a = s_block(a, s_substitution, count);
+  a = circular_shift(a, count);
+  a = xor_key(a, k, count);
+  p = merge(a, count);
+  free(a);
+  free(k);
+  return p;
+}
+
+
+unsigned int decryption_cbc_round(unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv){
+  int count = 2;
+  unsigned int** k = eight_bit_blocks(key, count);
+  unsigned int** a = eight_bit_blocks(p, count);
+  a = xor_key(a, k, count);
+  a = circular_backshift(a, count);
+  a = back_s_block(a, s_substitution, count);
+  p = merge(a, count);
+  p = p ^ iv;
+  free(a);
+  free(k);
+  return p;
+
+}
+
+
+unsigned int encryption_ecb(unsigned int* s_substitution, unsigned int p, unsigned int* key){
   int rounds = 2;
   for (int i = 0; i < rounds; i++){
-    p = cipher_round(s_substitution, p, key[i + 1]);
+    p = encryption_ecb_round(s_substitution, p, key[i + 1]);
+  }
+  return p;
+}
+
+
+unsigned int decryption_ecb(unsigned int* s_substitution, unsigned int p, unsigned int* key){
+  int rounds = 2;
+  for (int i = 0; i < rounds; i++){
+    p = decryption_ecb_round(s_substitution, p, key[i + 1]);
+  }
+  return p;
+}
+
+
+unsigned int encryption_cbc(unsigned int* s_substitution, unsigned int p, unsigned int* key, unsigned int iv){
+  int rounds = 2;
+  for (int i = 0; i < rounds; i++){
+    p = encryption_cbc_round(s_substitution, p, key[i + 1], iv);
+  }
+  return p;
+}
+
+
+unsigned int decryption_cbc(unsigned int* s_substitution, unsigned int p, unsigned int* key, unsigned int iv){
+  int rounds = 2;
+  for (int i = 0; i < rounds; i++){
+    p = decryption_cbc_round(s_substitution, p, key[i + 1], iv);
   }
   return p;
 }
@@ -231,12 +343,12 @@ unsigned int* key_calculation (unsigned int k, unsigned int* key){
 
 int main (int argc, char** argv) {
   unsigned int* key = (unsigned int*)calloc(3, sizeof(unsigned int));
-  unsigned int k, p;
+  unsigned int k, p, iv;
   unsigned int* s_substitution = load(argv[argc - 1], &p);
-  int a = analyse_input(argc, argv, s_substitution, &k);
+  int a = analyse_input(argc, argv, s_substitution, &k, &iv);
   key = key_calculation(k, key);
   unsigned int c0 = p ^ key[0];
-  p = cipher(s_substitution, c0, key);
+  p = encryption_cbc(s_substitution, c0, key, iv);
   printf("%x\n", p);
   free(s_substitution);
 }
