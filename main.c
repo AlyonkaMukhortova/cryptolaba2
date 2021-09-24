@@ -82,7 +82,7 @@ char* str_from_hex (unsigned int hex, long int size) {
 }
 
 
-int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned int* key, unsigned int* iv, int* crypt_mode, char* mode) {
+int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, int* crypt_mode, char* mode) {
   const struct option long_options[] = {
     {"help", no_argument, NULL, 'h'},
     {"version", no_argument, NULL, 'v'},
@@ -94,10 +94,11 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
     {"debug", no_argument, NULL, 'g'},
     {NULL, 0, NULL, 0}
   };
+	key[0] = '\0';
+	iv[0] = '\0';
   const char* short_options = "hvm:edk:i:g";
-  int now_optind = 0;
-  while (optind < argc - 1){
-    now_optind = optind;
+  int wrong = 0;
+  while (optind < argc){
     int cc = getopt_long(argc, argv, short_options, long_options, NULL);
     char c = cc;
     printf("option = %c\n", c);
@@ -125,7 +126,7 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
           *mode = 'c';
         }
         else{
-          return WRONG_VALUE;
+          wrong = -1;
         }
         continue;
       }
@@ -141,7 +142,7 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
         int err = 0;
         *key = hex_from_str(optarg, &err);
         if (err == WRONG_VALUE){
-          return WRONG_VALUE;
+					wrong = -1;
         }
         printf("key = %x\n", *key);
         continue;
@@ -149,19 +150,28 @@ int analyse_input (int argc, char** argv, unsigned int* s_substitution, unsigned
       case 'i':{
         int err1 = 0;
         *iv = hex_from_str(optarg, &err1);
+				printf("iv = %x\n", *iv);
         if (err1 == WRONG_VALUE){
-          return WRONG_VALUE;
+					wrong = -1;
         }
         continue;
       }
       case 'g':{
-        return 0;
+				int g  = 0;
+        //return 0;
       }
       case -1:{
         return -1;
       }
     }
   }
+	printf("%d\n", wrong == -1);
+	printf("%d\n",*mode == '\0');
+	printf("%d\n", *crypt_mode == 0);
+	printf("%d\n", *key == '\0');
+	printf("%d\n", *iv == '\0');
+	if (wrong == -1 || *mode == '\0' || *crypt_mode == 0 || *key == '\0' || *iv == '\0')
+		return WRONG_VALUE;
   return 0;
 }
 
@@ -235,7 +245,9 @@ unsigned int merge (unsigned int** a, int count) {
 unsigned int** s_block (unsigned int** a, unsigned int*s_substitution, int count) {
   for (int i = 0; i < count; i++){
     for (int j = 0; j < count; j++){
+			printf("hex before s-block = %x\n", a[i][j]);
       a[i][j] = s_substitution[a[i][j]];
+			printf("hex after s-block = %x\n", a[i][j]);
     }
   }
   return a;
@@ -364,12 +376,21 @@ unsigned int decryption_ecb_round (unsigned int* s_substitution, unsigned int p,
 
 unsigned int encryption_cbc_round (unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv) {
   int count = 2;
+	printf("hex before cipher = %x\n", p);
+	printf("hex iv = %x\n", iv);
   p = p ^ iv;
+	printf("hex after cipher = %x\n", p);
   unsigned int** k = eight_bit_blocks(key, count);
   unsigned int** a = eight_bit_blocks(p, count);
   a = s_block(a, s_substitution, count);
+	printf("hex after s-block = %x\n", a[0][0]);
+	printf("hex after s-block = %x\n", a[0][1]);
+	printf("hex after s-block = %x\n", a[1][0]);
+	printf("hex after s-block = %x\n", a[1][1]);
   a = circular_shift(a, count);
+	printf("hex after c-shift = %x\n", a[1][0]);
   a = xor_key(a, k, count);
+	printf("hex after xor key = %x\n", a[1][0]);
   p = merge(a, count);
   free(a);
   free(k);
@@ -495,7 +516,7 @@ char* decryption_ecb (unsigned int* s_substitution, char* p, unsigned int* key) 
 
 char* encryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv) {
   char* first = p;
-  int rounds = 2, err = 0, i = iv;
+  int rounds = 2, err = 0, iv1 = iv;
   unsigned int ptr = 0;
   long int size = strlen(p);
   char* res = (char*)malloc(size + 1);
@@ -508,7 +529,7 @@ char* encryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, 
   for (int i = 0; i < rounds; i++){
     for (int k = 0; k < blocks; k++){
       if (k == 0){
-        iv = i;
+        iv = iv1;
       }
       strncpy(block, p, 8);
       printf("block = %s\n", block);
@@ -601,24 +622,31 @@ char* decryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, 
 }
 
 
-unsigned int cipher (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv, int crypt_mode, char mode){
-  if (mode == 'e'){
-    if (crypt_mode == 1){
+char* cipher (int argc, char** argv, char* p, unsigned int* key, unsigned int iv, int crypt_mode, char mode){
+	unsigned int* s_substitution = NULL;
+  if (crypt_mode == 1){
+		s_substitution = load_straight(argv[argc - 1], &p);
+    if (mode == 'e'){
       printf("Encryption ecb mode\n");
+			p = encryption_ecb(s_substitution, p, key);
     }
-    else if (crypt_mode == 2){
-      printf("Decryption ecb mode\n");
+    else if (mode == 'c'){
+      printf("Encryption cbc mode\n");
+			p = encryption_cbc(s_substitution, p, key, iv);
     }
     else{
       printf("Something's wrong with mode\n");
     }
   }
-  else if (mode == 'c'){
-    if (crypt_mode == 1){
-      printf("Encryption cbc mode\n");
+  else if (crypt_mode == 2){
+		s_substitution = load_back(argv[argc - 1], &p);
+    if (mode == 'e'){
+      printf("Decryption ecb mode\n");
+			p = decryption_ecb(s_substitution, p, key);
     }
-    else if (crypt_mode == 2){
+    else if (mode == 'c'){
       printf("Decryption cbc mode\n");
+			p = decryption_cbc(s_substitution, p, key, iv);
     }
     else{
       printf("Something's wrong with mode\n");
@@ -627,7 +655,8 @@ unsigned int cipher (unsigned int* s_substitution, char* p, unsigned int* key, u
   else{
     printf("Something's wrong with mode\n");
   }
-  return 0;
+	free(s_substitution);
+  return p;
 }
 
 
@@ -646,13 +675,19 @@ unsigned int* key_calculation (unsigned int k, unsigned int* key) {
 int main (int argc, char** argv) {
   unsigned int* key = (unsigned int*)calloc(3, sizeof(unsigned int));
   unsigned int k, iv;
-  char * p, mode;
-  int crypt_mode;
-  unsigned int* s_substitution = load_straight(argv[argc - 1], &p);
-  int a = analyse_input(argc, argv, s_substitution, &k, &iv, &crypt_mode, &mode);
-  key = key_calculation(k, key);
-  int q = cipher(s_substitution, p, key, iv, crypt_mode, mode);
-  p = decryption_cbc(s_substitution, p, key, iv);
-  printf("%s\n", p);
-  free(s_substitution);
+  char * p, mode = '\0';
+  int crypt_mode = 0;
+  int a = analyse_input(argc, argv, &k, &iv, &crypt_mode, &mode);
+	if(a != WRONG_VALUE){
+		//s_substitution = load_straight(argv[argc - 1], &p);
+	  key = key_calculation(k, key);
+	  p = cipher(argc, argv, p, key, iv, crypt_mode, mode);
+	  //p = encryption_cbc(s_substitution, p, key, iv);
+	  printf("%s\n", p);
+	}
+	else{
+		printf("Something wrong in command. If you need help enter ih flag.");
+	}
+	printf ("That's all. Bye!\n");
+	return 0;
 }
