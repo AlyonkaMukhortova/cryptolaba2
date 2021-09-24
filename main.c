@@ -161,7 +161,9 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
         //return 0;
       }
       case -1:{
-        return -1;
+				optind++;
+				break;
+        //return -1;
       }
     }
   }
@@ -686,7 +688,7 @@ int main (int argc, char** argv) {
 	  printf("%s\n", p);
 	}
 	else{
-		printf("Something wrong in command. If you need help enter ih flag.");
+		printf("Something wrong in command. If you need help enter -h flag.\n");
 	}
 	printf ("That's all. Bye!\n");
 	return 0;
