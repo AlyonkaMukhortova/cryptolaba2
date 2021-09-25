@@ -184,20 +184,13 @@ unsigned int xor_key (unsigned int p, unsigned int k, int count) {
 
 
 unsigned int circular_shift (unsigned int p, int count) {
-	printf("I'm in shift\n");
-	printf("%x\n", p >> 16 << 16);
-	printf("%x\n", p << 16 >> 24);
-	printf("%x\n", p << 24 >> 16);
 	p = (p >> 16 << 16) | (p << 16 >> 24) | (p << 24 >> 16);
   return p;
 }
 
 
 unsigned int circular_backshift (unsigned int p, int count) {
-	printf("%x\n", p * 0xffff0000);
-	printf("%x\n", (p * 0x0000ff00) >> 8);
-	printf("%x\n", (p * 0x000000ff) << 8);
-	p = p * 0xffff0000 + ((p * 0x0000ff00) >> 8) + ((p * 0x000000ff) << 8);
+	p = (p >> 16 << 16) | (p << 16 >> 24) | (p << 24 >> 16);
   return p;
 }
 
@@ -229,23 +222,8 @@ unsigned int merge (unsigned int** a, int count) {
 }
 
 
-unsigned int** s_block (unsigned int p, unsigned int*s_substitution, int count) {
-	/*printf("%x\n", (p * 0xff000000) >> 24);
-	printf("%x\n", s_substitution[(p * 0xff000000) >> 24] << 24);
-	printf("%x\n", (p * 0x00ff0000) >> 16);
-	printf("%x\n", s_substitution[(p * 0x00ff0000) >> 16] << 16);
-	printf("%x\n", p * 0x0000ff00 >> 8);
-	printf("%x\n", s_substitution[p * 0x0000ff00 >> 8] << 8);
-	printf("%x\n", p * 0x000000ff);
-	printf("%x\n", s_substitution[p * 0x000000ff]);*/
+unsigned int s_block (unsigned int p, unsigned int*s_substitution, int count) {
 	p = (s_substitution[p >> 24] << 24) + (s_substitution[p << 8 >> 24] << 16) + (s_substitution[p << 16 >> 24] << 8) + (s_substitution[p << 24 >> 24]);
-  /*for (int i = 0; i < count; i++){
-    for (int j = 0; j < count; j++){
-			printf("hex before s-block = %x\n", a[i][j]);
-      a[i][j] = s_substitution[a[i][j]];
-			printf("hex after s-block = %x\n", a[i][j]);
-    }
-  }*/
   return p;
 }
 
@@ -324,8 +302,6 @@ unsigned int* load_back (char* file_name, char** p) {
 
 unsigned int encryption_ecb_round (unsigned int* s_substitution, unsigned int p, unsigned int key) {
   int count = 2;
-  //unsigned int** k = eight_bit_blocks(key, count);
-  //unsigned int** a = eight_bit_blocks(p, count);
 	printf("WALK into round DONE\n");
   p = s_block(p, s_substitution, count);
 	printf("S-block DONE - %x\n", p);
@@ -333,70 +309,51 @@ unsigned int encryption_ecb_round (unsigned int* s_substitution, unsigned int p,
 	printf("Shift DONE - %x\n", p);
   p = xor_key(p, key, count);
 	printf("XOR DONE - %x\n", p);
-  //p = merge(a, count);
-  //free(a);
-  //free(k);
   return p;
 
 }
 
 
 unsigned int decryption_ecb_round (unsigned int* s_substitution, unsigned int p, unsigned int key) {
-  int count = 2;
-  unsigned int** k = eight_bit_blocks(key, count);
-  printf("8 bit blocks key - DONE\n");
-  unsigned int** a = eight_bit_blocks(p, count);
-  printf("8 bit blocks text - DONE\n");
-  a = xor_key(a, k, count);
-  printf("XOR with key - DONE\n");
-  a = circular_backshift(a, count);
-  printf("Backshift - DONE\n");
-  a = back_s_block(a, s_substitution, count);
-  printf("S-Block - DONE\n");
-  p = merge(a, count);
-  free(a);
-  free(k);
+	int count = 2;
+	printf("WALK into round DONE\n");
+	p = xor_key(p, key, count);
+	printf("XOR DONE - %x\n", p);
+	p = circular_backshift(p, count);
+	printf("Shift DONE - %x\n", p);
+  p = s_block(p, s_substitution, count);
+	printf("S-block DONE - %x\n", p);
   return p;
 }
 
 
 unsigned int encryption_cbc_round (unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv) {
   int count = 2;
-	printf("hex before cipher = %x\n", p);
-	printf("hex iv = %x\n", iv);
+	printf("WALK into round DONE\n");
   p = p ^ iv;
-	printf("hex after cipher = %x\n", p);
-  unsigned int** k = eight_bit_blocks(key, count);
-  unsigned int** a = eight_bit_blocks(p, count);
-  a = s_block(a, s_substitution, count);
-	printf("hex after s-block = %x\n", a[0][0]);
-	printf("hex after s-block = %x\n", a[0][1]);
-	printf("hex after s-block = %x\n", a[1][0]);
-	printf("hex after s-block = %x\n", a[1][1]);
-  a = circular_shift(a, count);
-	printf("hex after c-shift = %x\n", a[1][0]);
-  a = xor_key(a, k, count);
-	printf("hex after xor key = %x\n", a[1][0]);
-  p = merge(a, count);
-  free(a);
-  free(k);
+	printf("XOR IV DONE - %x\n", p);
+	p = s_block(p, s_substitution, count);
+	printf("S-block DONE - %x\n", p);
+  p = circular_shift(p, count);
+	printf("Shift DONE - %x\n", p);
+  p = xor_key(p, key, count);
+	printf("XOR DONE - %x\n", p);
   return p;
 }
 
 
 unsigned int decryption_cbc_round (unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv) {
   int count = 2;
-  unsigned int** k = eight_bit_blocks(key, count);
-  unsigned int** a = eight_bit_blocks(p, count);
-  a = xor_key(a, k, count);
-  a = circular_backshift(a, count);
-  a = back_s_block(a, s_substitution, count);
-  p = merge(a, count);
-  p = p ^ iv;
-  free(a);
-  free(k);
+	printf("WALK into round DONE\n");
+	p = xor_key(p, key, count);
+	printf("XOR DONE - %x\n", p);
+	p = circular_backshift(p, count);
+	printf("Shift DONE - %x\n", p);
+	p = s_block(p, s_substitution, count);
+	printf("S-block DONE - %x\n", p);
+	p = p ^ iv;
+	printf("XOR IV DONE - %x\n", p);
   return p;
-
 }
 
 
@@ -556,7 +513,7 @@ char* encryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, 
 
 char* decryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv) {
   char* first = p;
-  int rounds = 2, err = 0, i = iv;
+  int rounds = 2, err = 0, iv1 = iv;
   unsigned int ptr = 0;
   long int size = strlen(p);
   char* res = (char*)malloc(size + 1);
@@ -569,7 +526,7 @@ char* decryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, 
   for (int i = 0; i < rounds; i++){
     for (int k = 0; k < blocks; k++){
       if (k == 0){
-        iv = i;
+        iv = iv1;
       }
       strncpy(block, p, 8);
       printf("block = %s\n", block);
