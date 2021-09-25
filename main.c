@@ -9,7 +9,7 @@
 
 #define SUCCESS 0
 #define NO_KEY -1
-#define NO_MODE -2
+#define NO_ARGS -2
 #define WRONG_VALUE -3
 
 
@@ -98,7 +98,7 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
 	iv[0] = '\0';
   const char* short_options = "hvm:edk:i:g";
   int wrong = 0;
-  while (optind < argc){
+  while (optind < argc - 1 || optind < 2){
     int cc = getopt_long(argc, argv, short_options, long_options, NULL);
     char c = cc;
     printf("option = %c\n", c);
@@ -111,11 +111,11 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
         printf("-k, --key=[value] for key init\n");
         printf("-i, --iv=[value] for initialization vector\n");
         printf("-g, --debug for intermediate values\n");
-        continue;
+        return NO_ARGS;
       }
       case 'v':{
         printf("Software version 1.0\n");
-        continue;
+				return NO_ARGS;
       }
       case 'm':{
         printf("arg of option m = %s\n", optarg);
@@ -126,7 +126,7 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
           *mode = 'c';
         }
         else{
-          wrong = -1;
+          return WRONG_VALUE;
         }
         continue;
       }
@@ -142,7 +142,7 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
         int err = 0;
         *key = hex_from_str(optarg, &err);
         if (err == WRONG_VALUE){
-					wrong = -1;
+					return WRONG_VALUE;
         }
         printf("key = %x\n", *key);
         continue;
@@ -152,7 +152,7 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
         *iv = hex_from_str(optarg, &err1);
 				printf("iv = %x\n", *iv);
         if (err1 == WRONG_VALUE){
-					wrong = -1;
+					return WRONG_VALUE;
         }
         continue;
       }
@@ -172,7 +172,7 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
 	printf("%d\n", *crypt_mode == 0);
 	printf("%d\n", *key == '\0');
 	printf("%d\n", *iv == '\0');
-	if (wrong == -1 || *mode == '\0' || *crypt_mode == 0 || *key == '\0' || *iv == '\0')
+	if (*mode == '\0' || *crypt_mode == 0 || *key == '\0' || (*iv == '\0' && *mode == 'c'))
 		return WRONG_VALUE;
   return 0;
 }
@@ -621,15 +621,18 @@ int main (int argc, char** argv) {
   char * p, mode = '\0';
   int crypt_mode = 0;
   int a = analyse_input(argc, argv, &k, &iv, &crypt_mode, &mode);
-	if(a != WRONG_VALUE){
+	if(a == 0){
 		//s_substitution = load_straight(argv[argc - 1], &p);
 	  key = key_calculation(k, key);
 	  p = cipher(argc, argv, p, key, iv, crypt_mode, mode);
 	  //p = encryption_cbc(s_substitution, p, key, iv);
 	  printf("%s\n", p);
 	}
-	else{
+	else if (a == WRONG_VALUE){
 		printf("Something wrong in command. If you need help enter -h flag.\n");
+	}
+	else{
+		printf("Please, try again.\n");
 	}
 	printf ("That's all. Bye!\n");
 	return 0;
