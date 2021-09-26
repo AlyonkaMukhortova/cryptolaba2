@@ -158,12 +158,10 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
       }
       case 'g':{
 				int g  = 0;
-        //return 0;
       }
       case -1:{
 				optind++;
 				break;
-        //return -1;
       }
     }
   }
@@ -190,108 +188,58 @@ unsigned int circular_backshift (unsigned int p, int count) {
 }
 
 
-unsigned int** eight_bit_blocks (unsigned int p, int count) {
-  unsigned int** a = (unsigned int**)malloc(count * sizeof(unsigned int*));
-  for(int i = 0; i < count; i++){
-    a[i] = (unsigned int*)malloc(count * sizeof(unsigned int));
-  }
-  for (int i = count; i > 0; i--){
-    for (int j = count; j > 0; j--){
-      a[i - 1][j - 1] = p % 256;
-      p = p >> 8;
-    }
-  }
-  return a;
-}
-
-
-unsigned int merge (unsigned int** a, int count) {
-  unsigned int res = 0;
-  for (int i = 0; i < count; i++){
-    for (int j = 0; j < count; j++){
-      res = res << 8;
-      res |= a[i][j];
-    }
-  }
-  return res;
-}
-
-
 unsigned int s_block (unsigned int p, unsigned int*s_substitution, int count) {
 	p = (s_substitution[p >> 24] << 24) + (s_substitution[p << 8 >> 24] << 16) + (s_substitution[p << 16 >> 24] << 8) + (s_substitution[p << 24 >> 24]);
   return p;
 }
 
 
-
-unsigned int** back_s_block (unsigned int** a, unsigned int*s_substitution, int count) {
-  for (int i = 0; i < count; i++){
-    for (int j = 0; j < count; j++){
-      int k = 0;
-      while(a[i][j] != s_substitution[k]){
-        k++;
-      }
-      a[i][j] = k;
-    }
-  }
-  return a;
-}
-
-
-unsigned int* load_subs_back (FILE* fd) {
-  unsigned int* s_substitution = (unsigned int*)malloc(256 * sizeof(unsigned int));
-  unsigned int* s = s_substitution;
+void load_subs_back (FILE* fd, unsigned int** s_substitution) {
+  unsigned int* s = *s_substitution;
   char* str = (char*)malloc(3);
   str[2] = '\0';
   for (int i = 0; i < 256; i++){
     fgets(str, 3, fd);
     int err = 0;
-    s_substitution[hex_from_str(str, &err)] = i;
+    (*s_substitution)[hex_from_str(str, &err)] = i;
     unsigned int t = hex_from_str(str, &err);
     if (err == WRONG_VALUE){
-      return NULL;
     }
     s++;
   }
-  return s_substitution;
 }
 
 
-unsigned int* load_subs_straight (FILE* fd) {
-  unsigned int* s_substitution = (unsigned int*)malloc(256 * sizeof(unsigned int));
-  unsigned int* s = s_substitution;
+void load_subs_straight (FILE* fd, unsigned int** s_substitution) {
+  unsigned int* s = *s_substitution;
   char* str = (char*)malloc(3);
   str[2] = '\0';
   for (int i = 0; i < 256; i++){
     fgets(str, 3, fd);
     int err = 0;
-    s_substitution[i] = hex_from_str(str, &err);
+    (*s_substitution)[i] = hex_from_str(str, &err);
     if (err == WRONG_VALUE){
-      return NULL;
     }
     s++;
   }
-  return s_substitution;
 }
 
 
-unsigned int* load_straight (char* file_name, char** p) {
+void load_straight (char* file_name, char** p, unsigned int** s_substitution) {
   FILE* fd;
   fd = fopen(file_name, "r");
-  unsigned int* s_substitution = load_subs_straight(fd);
+  load_subs_straight(fd, s_substitution);
   *p = fgetstr(fd);
   fclose(fd);
-  return s_substitution;
 }
 
 
-unsigned int* load_back (char* file_name, char** p) {
+void load_back (char* file_name, char** p, unsigned int** s_substitution) {
   FILE* fd;
   fd = fopen(file_name, "r");
-  unsigned int* s_substitution = load_subs_back(fd);
+  load_subs_back(fd, s_substitution);
   *p = fgetstr(fd);
   fclose(fd);
-  return s_substitution;
 }
 
 
@@ -378,27 +326,53 @@ void res_block(int k, char** res, unsigned int ptr, char** p){
 	printf("p after block encrypt = %s\n", *p);
 }
 
+unsigned int cbc_round(unsigned int* s_substitution, unsigned int ptr, unsigned int* key,
+	 									unsigned int* iv, unsigned int iv1, int i, int crypt_mode, int k){
+	if(i == 0){
+		ptr = ptr ^ key[0];
+	}
+	printf("hex1 = %x\n", ptr);
+	if (k == 0){
+		*iv = iv1;
+	}
+	if (crypt_mode == 1){
+		ptr = encryption_cbc_round(s_substitution, ptr, key[i + 1], *iv);
+	}
+	else{
+		ptr = decryption_cbc_round(s_substitution, ptr, key[i + 1], *iv);
+	}
+	*iv = ptr;
+	return ptr;
+}
 
-char* encryption_ecb (unsigned int* s_substitution, char* p, unsigned int* key) {
-  char* first = p;
-  int rounds = 2, err = 0;
-  unsigned int ptr = 0;
-  long int size = strlen(p);
-  char* res = (char*)malloc(size + 1);
-  res[0] = '\0';
-  int blocks = size / 8;
-  if(size % 8 != 0)
-    blocks++;
-  char* block = (char*)malloc(9);
-  block[8] = '\0';
+
+unsigned int ecb_round(unsigned int* s_substitution, unsigned int ptr, unsigned int* key, int i, int crypt_mode){
+	if(i ==0 ){
+		ptr = ptr ^ key[0];
+	}
+	printf("hex1 = %x\n", ptr);
+	if (crypt_mode == 1){
+		ptr = encryption_ecb_round(s_substitution, ptr, key[i + 1]);
+	}
+	else{
+		ptr = decryption_ecb_round(s_substitution, ptr, key[i + 1]);
+	}
+	return ptr;
+}
+
+
+char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv, int blocks,
+				int rounds, unsigned int iv1, unsigned int ptr, char* res, char* block, int err, char*first,
+				int crypt_mode, char mode){
   for (int i = 0; i < rounds; i++){
     for (int k = 0; k < blocks; k++){
 			make_block (&block, p, &ptr, &err);
-      if(i ==0 ){
-        ptr = ptr ^ key[0];
-      }
-      printf("hex1 = %x\n", ptr);
-      ptr = encryption_ecb_round(s_substitution, ptr, key[i + 1]);
+			if (mode == 'e'){
+				ptr = ecb_round (s_substitution, ptr, key, i, crypt_mode);
+			}
+			else{
+				ptr = cbc_round (s_substitution, ptr, key, &iv, iv1, i, crypt_mode, k);
+			}
       printf("hex after encryption = %x\n", ptr);
 			res_block(k, &res, ptr, &p);
     }
@@ -411,143 +385,31 @@ char* encryption_ecb (unsigned int* s_substitution, char* p, unsigned int* key) 
 }
 
 
-char* decryption_ecb (unsigned int* s_substitution, char* p, unsigned int* key) {
-  char* first = p;
-  int rounds = 2, err = 0;
-  unsigned int ptr = 0;
-  long int size = strlen(p);
-  char* res = (char*)malloc(size + 1);
-  res[0] = '\0';
-  int blocks = size / 8;
-  if(size % 8 != 0)
-    blocks++;
-  char* block = (char*)malloc(9);
-  block[8] = '\0';
-  for (int i = 0; i < rounds; i++){
-    for (int k = 0; k < blocks; k++){
-			make_block (&block, p, &ptr, &err);
-      if(i == 0){
-        ptr = ptr ^ key[0];
-      }
-      printf("hex1 = %x\n", ptr);
-      ptr = decryption_ecb_round(s_substitution, ptr, key[i + 1]);
-      printf("hex after encryption = %x\n", ptr);
-			res_block(k, &res, ptr, &p);
-    }
-    printf("res of round = %s\n", res);
-    strcpy(p, res);
-    first = res;
-  }
-  res[8 * blocks] = '\0';
-  return res;
-}
-
-
-char* encryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv) {
-  char* first = p;
-  int rounds = 2, err = 0, iv1 = iv;
-  unsigned int ptr = 0;
-  long int size = strlen(p);
-  char* res = (char*)malloc(size + 1);
-  res[0] = '\0';
-  int blocks = size / 8;
-  if(size % 8 != 0)
-    blocks++;
-  char* block = (char*)malloc(9);
-  block[8] = '\0';
-  for (int i = 0; i < rounds; i++){
-    for (int k = 0; k < blocks; k++){
-      if (k == 0){
-        iv = iv1;
-      }
-			make_block (&block, p, &ptr, &err);
-      if(i == 0){
-        ptr = ptr ^ key[0];
-      }
-      printf("hex1 = %x\n", ptr);
-      ptr = encryption_cbc_round(s_substitution, ptr, key[i + 1], iv);
-      iv = ptr;
-      printf("hex after encryption = %x\n", ptr);
-			res_block(k, &res, ptr, &p);
-    }
-    printf("res of round = %s\n", res);
-    strcpy(p, res);
-    first = res;
-  }
-  res[8 * blocks] = '\0';
-  return res;
-}
-
-
-char* decryption_cbc (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv) {
-  char* first = p;
-  int rounds = 2, err = 0, iv1 = iv;
-  unsigned int ptr = 0;
-  long int size = strlen(p);
-  char* res = (char*)malloc(size + 1);
-  res[0] = '\0';
-  int blocks = size / 8;
-  if(size % 8 != 0)
-    blocks++;
-  char* block = (char*)malloc(9);
-  block[8] = '\0';
-  for (int i = 0; i < rounds; i++){
-    for (int k = 0; k < blocks; k++){
-      if (k == 0){
-        iv = iv1;
-      }
-			make_block (&block, p, &ptr, &err);
-      if(i == 0){
-        ptr = ptr ^ key[0];
-      }
-      printf("hex1 = %x\n", ptr);
-      ptr = decryption_cbc_round(s_substitution, ptr, key[i + 1], iv);
-      iv = ptr;
-      printf("hex after encryption = %x\n", ptr);
-			res_block(k, &res, ptr, &p);
-    }
-    printf("res of round = %s\n", res);
-    strcpy(p, res);
-    first = res;
-  }
-  res[8 * blocks] = '\0';
-  return res;
-}
-
-
-char* cipher (int argc, char** argv, char* p, unsigned int* key, unsigned int iv, int crypt_mode, char mode){
-	unsigned int* s_substitution = NULL;
+void load (int argc, char** argv, char** p, int crypt_mode, char mode, unsigned int** s_substitution){
   if (crypt_mode == 1){
-		s_substitution = load_straight(argv[argc - 1], &p);
-    if (mode == 'e'){
-      printf("Encryption ecb mode\n");
-			p = encryption_ecb(s_substitution, p, key);
-    }
-    else if (mode == 'c'){
-      printf("Encryption cbc mode\n");
-			p = encryption_cbc(s_substitution, p, key, iv);
-    }
-    else{
-      printf("Something's wrong with mode\n");
-    }
+		load_straight(argv[argc - 1], p, s_substitution);
   }
   else if (crypt_mode == 2){
-		s_substitution = load_back(argv[argc - 1], &p);
-    if (mode == 'e'){
-      printf("Decryption ecb mode\n");
-			p = decryption_ecb(s_substitution, p, key);
-    }
-    else if (mode == 'c'){
-      printf("Decryption cbc mode\n");
-			p = decryption_cbc(s_substitution, p, key, iv);
-    }
-    else{
-      printf("Something's wrong with mode\n");
-    }
-  }
-  else{
-    printf("Something's wrong with mode\n");
-  }
+		load_back(argv[argc - 1], p, s_substitution);
+	}
+}
+
+
+char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned int iv, int crypt_mode, char mode){
+	unsigned int* s_substitution = (unsigned int*)malloc(256 * sizeof(unsigned int));
+	load(argc, argv, &p, crypt_mode, mode, &s_substitution);
+	long int size = strlen(p);
+	char* first = p;
+	char* res = (char*)malloc(size + 1);
+	char* block = (char*)malloc(9);
+	unsigned int ptr = 0, iv1 = iv;
+  int rounds = 2, err = 0, blocks = size / 8;
+	if(size % 8 != 0)
+    blocks++;
+  res[0] = '\0';
+  block[8] = '\0';
+	p = crypt (s_substitution, p, key, iv, blocks, rounds, iv1, ptr,
+						res, block, err, first, crypt_mode, mode);
 	free(s_substitution);
   return p;
 }
@@ -572,10 +434,8 @@ int main (int argc, char** argv) {
   int crypt_mode = 0;
   int a = analyse_input(argc, argv, &k, &iv, &crypt_mode, &mode);
 	if(a == 0){
-		//s_substitution = load_straight(argv[argc - 1], &p);
 	  key = key_calculation(k, key);
-	  p = cipher(argc, argv, p, key, iv, crypt_mode, mode);
-	  //p = encryption_cbc(s_substitution, p, key, iv);
+	  p = init_n_cipher(argc, argv, p, key, iv, crypt_mode, mode);
 	  printf("%s\n", p);
 	}
 	else if (a == WRONG_VALUE){
