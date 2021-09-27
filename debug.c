@@ -50,13 +50,15 @@ void print_debug(Debug* debug, int crypt_mode, char mode){
     mess[2] = 2;
     mess[6] = 1;
   }
-  printf("%d\n", debug->real_num);
   for(int i = 0; i < debug->real_num; i++){
     ind = i % num_mes;
-    printf("%d\n", ind);
     printf("%s:   %x\n", info[mess[ind]], debug->all[i]);
   }
 }
 
 
-void delete_debug();
+void delete_debug(Debug* debug){
+  free(debug->key);
+  free(debug->all);
+  free(debug);
+}

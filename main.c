@@ -450,12 +450,12 @@ char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned
 		debug->key[i] = key[i+1];
 	}
 	debug->iv = iv;
-	printf("Init debug DONE\n");
 	p = crypt (s_substitution, p, key, iv, blocks, rounds, iv1, ptr,
 						res, block, err, first, crypt_mode, mode, debug);
 	if (debugger == 1)
 		print_debug(debug, crypt_mode, mode);
 	free(s_substitution);
+	delete_debug(debug);
   return p;
 }
 

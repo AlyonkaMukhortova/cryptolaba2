@@ -14,7 +14,7 @@ typedef struct Debug{
 
 Debug* init(int blocks);
 void print_debug(Debug* debug, int crypt_mode, char mode);
-void delete_debug();
+void delete_debug(Debug* debug);
 
 
 #endif //DEBUG_H
