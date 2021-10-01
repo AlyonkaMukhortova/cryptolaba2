@@ -14,21 +14,21 @@
 
 
 const unsigned int subs[] = {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
-0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
-0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
-0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,
-0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,
-0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,
-0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,
-0x51, 0xa3, 0x40, 0x9f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,
-0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
-0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
-0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
-0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
-0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
-0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
-0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
-0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16};
+														0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
+														0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
+														0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,
+														0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,
+														0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,
+														0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,
+														0x51, 0xa3, 0x40, 0x9f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,
+														0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
+														0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
+														0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
+														0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
+														0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
+														0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
+														0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
+														0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16};
 
 
 char* fgetstr (FILE* fd) {
@@ -84,7 +84,7 @@ unsigned int hex_from_str (char* arg, int* err) {
 
 
 char* str_from_hex (unsigned int hex, long int size) {
-  char* res = (char*)malloc(size);
+  char* res = (char*)malloc(size + 1);
   int a = 0;
   for(int i = 1; i<size + 1; i++){
       a = hex % 16;
@@ -95,6 +95,7 @@ char* str_from_hex (unsigned int hex, long int size) {
     //printf("symbol = %c\n", res[size - i]);
 		hex = hex >> 4;
 	}
+	res[size] = '\0';
   //printf("str hex = %s\n", res);
   return res;
 }
@@ -263,17 +264,13 @@ void load_back (char* file_name, char** p, unsigned int** s_substitution) {
 
 unsigned int encryption_ecb_round (unsigned int* s_substitution, unsigned int p, unsigned int key, Debug* debug) {
   int count = 2;
-	printf("WALK into round DONE\n");
   p = s_block(p, s_substitution, count);
-	printf("S-block DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   p = circular_shift(p, count);
-	printf("Shift DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   p = xor_key(p, key, count);
-	printf("XOR DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   return p;
@@ -283,40 +280,33 @@ unsigned int encryption_ecb_round (unsigned int* s_substitution, unsigned int p,
 
 unsigned int decryption_ecb_round (unsigned int* s_substitution, unsigned int p, unsigned int key, Debug* debug) {
 	int count = 2;
-	printf("WALK into round DONE\n");
 	p = xor_key(p, key, count);
-	printf("XOR DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
-	p = circular_backshift(p, count);
-	printf("Shift DONE - %x\n", p);
+	//printf("%d\n", debug->real_num);
+	p = circular_shift(p, count);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
+	//printf("%d\n", debug->real_num);
   p = s_block(p, s_substitution, count);
-	printf("S-block DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
+	//printf("after s block %d\n", debug->real_num);
   return p;
 }
 
 
 unsigned int encryption_cbc_round (unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv, Debug* debug) {
   int count = 2;
-	printf("WALK into round DONE\n");
-  p = p ^ iv;
-	printf("XOR IV DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
 	p = s_block(p, s_substitution, count);
-	printf("S-block DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   p = circular_shift(p, count);
-	printf("Shift DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   p = xor_key(p, key, count);
-	printf("XOR DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   return p;
@@ -325,21 +315,15 @@ unsigned int encryption_cbc_round (unsigned int* s_substitution, unsigned int p,
 
 unsigned int decryption_cbc_round (unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv, Debug* debug) {
   int count = 2;
-	printf("WALK into round DONE\n");
 	p = xor_key(p, key, count);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
-	printf("XOR DONE - %x\n", p);
 	p = circular_backshift(p, count);
-	printf("Shift DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
 	p = s_block(p, s_substitution, count);
-	printf("S-block DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
-	p = p ^ iv;
-	printf("XOR IV DONE - %x\n", p);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
   return p;
@@ -348,20 +332,18 @@ unsigned int decryption_cbc_round (unsigned int* s_substitution, unsigned int p,
 
 void make_block (char** block, char* p, unsigned int* ptr, int* err, Debug* debug){
 	strncpy(*block, p, 8);
-	printf("block = %s\n", *block);
 	if(strlen(*block) < 8){
 		for (int j = strlen(*block); j < 8; j++){
 			(*block)[j] = '0';
 		}
 	}
 	*ptr = hex_from_str(*block, err);
-	printf("hex = %x\n", *ptr);
-	debug->all[debug->real_num] = *ptr;
-	debug->real_num++;
+	//debug->all[debug->real_num] = *ptr;
+	//debug->real_num++;
 }
 
 
-void res_block(int k, char** res, unsigned int ptr, char** p){
+void res_block(int k, char** res, unsigned int ptr, char** p, int i){
 	if (k == 0){
 		strncpy(*res, str_from_hex(ptr, 8), 8);
 		(*res)[8] = '\0';
@@ -369,45 +351,32 @@ void res_block(int k, char** res, unsigned int ptr, char** p){
 	else{
 		strncat(*res, str_from_hex(ptr, 8), 8);
 	}
-	printf("p before block encrypt = %s\n", *p);
-	(*p)+=8;
-	printf("p after block encrypt = %s\n", *p);
 }
 
 unsigned int cbc_round(unsigned int* s_substitution, unsigned int ptr, unsigned int* key,
 	 									unsigned int* iv, unsigned int iv1, int i, int crypt_mode, int k, Debug* debug){
-	if(i == 0){
-		ptr = ptr ^ key[0];
-	}
-	printf("hex1 = %x\n", ptr);
 	debug->all[debug->real_num] = ptr;
 	debug->real_num++;
-	if (k == 0){
-		*iv = iv1;
-	}
+	//printf("%d\n", debug->real_num);
 	if (crypt_mode == 1){
 		ptr = encryption_cbc_round(s_substitution, ptr, key[i + 1], *iv, debug);
 	}
 	else{
-		ptr = decryption_cbc_round(s_substitution, ptr, key[i + 1], *iv, debug);
+		ptr = decryption_cbc_round(s_substitution, ptr, key[2 - i], *iv, debug);
 	}
-	*iv = ptr;
 	return ptr;
 }
 
 
 unsigned int ecb_round(unsigned int* s_substitution, unsigned int ptr, unsigned int* key, int i, int crypt_mode, Debug* debug){
-	if(i ==0 ){
-		ptr = ptr ^ key[0];
-	}
-	printf("hex1 = %x\n", ptr);
 	debug->all[debug->real_num] = ptr;
 	debug->real_num++;
+	//printf("before round %d\n", debug->real_num);
 	if (crypt_mode == 1){
 		ptr = encryption_ecb_round(s_substitution, ptr, key[i + 1], debug);
 	}
 	else{
-		ptr = decryption_ecb_round(s_substitution, ptr, key[i + 1], debug);
+		ptr = decryption_ecb_round(s_substitution, ptr, key[2 - i], debug);
 	}
 	return ptr;
 }
@@ -416,25 +385,53 @@ unsigned int ecb_round(unsigned int* s_substitution, unsigned int ptr, unsigned 
 char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv, int blocks,
 				int rounds, unsigned int iv1, unsigned int ptr, char* res, char* block, int err, char*first,
 				int crypt_mode, char mode, Debug* debug){
-  for (int i = 0; i < rounds; i++){
-    for (int k = 0; k < blocks; k++){
-			make_block (&block, p, &ptr, &err, debug);
+	unsigned int iv0 = iv;
+  for (int i = 0; i < blocks; i++){
+		make_block (&block, p, &ptr, &err, debug);
+
+		if (crypt_mode == 2){
+			iv0 = ptr;
+		}
+		if (mode == 'c' && crypt_mode == 1){
+			ptr = ptr ^ iv;
+		}
+		if (crypt_mode == 1){
+			ptr = ptr ^ key[0];
+		}
+		//ptr = ptr ^ key[0];
+
+
+    for (int k = 0; k < rounds; k++){
+
 			if (mode == 'e'){
-				ptr = ecb_round (s_substitution, ptr, key, i, crypt_mode, debug);
+				ptr = ecb_round (s_substitution, ptr, key, k, crypt_mode, debug);
 			}
 			else{
-				ptr = cbc_round (s_substitution, ptr, key, &iv, iv1, i, crypt_mode, k, debug);
+				ptr = cbc_round (s_substitution, ptr, key, &iv, iv1, k, crypt_mode, i, debug);
 			}
-      printf("hex after encryption = %x\n", ptr);
 			debug->all[debug->real_num] = ptr;
 			debug->real_num++;
-			res_block(k, &res, ptr, &p);
+			//printf("after round %d\n", debug->real_num);
     }
-    printf("res of round = %s\n", res);
-    strcpy(p, res);
-    first = res;
+
+
+		if (crypt_mode == 1){
+			iv0 = ptr;
+		}
+		if(crypt_mode == 2){
+			ptr = ptr ^ key[0];
+		}
+		if (mode == 'c' && crypt_mode == 2){
+			ptr = ptr ^ iv;
+		}
+		printf("%x", ptr);
+		//debug->all[debug->real_num] = p;
+		//debug->real_num++;
+		iv = iv0;
+		p+=8;
   }
   res[8 * blocks] = '\0';
+	printf("\n");
   return res;
 }
 
@@ -483,7 +480,7 @@ char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned
 	load(argc, argv, &p, crypt_mode, mode, &s_substitution);
 	long int size = strlen(p);
 	char* first = p;
-	char* res = (char*)malloc(size + 1);
+	char* res = (char*)malloc(1);//(size/8 + 1) * 8 + 1);
 	char* block = (char*)malloc(9);
 	unsigned int ptr = 0, iv1 = iv;
   int rounds = 2, err = 0, blocks = size / 8;
@@ -492,6 +489,7 @@ char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned
   res[0] = '\0';
   block[8] = '\0';
 	Debug* debug = init(blocks);
+	debug->blocks_num = blocks;
 	debug->skey = key[0];
 	for (int i = 0; i < 2; i++){
 		debug->key[i] = key[i+1];
