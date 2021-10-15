@@ -11,11 +11,12 @@ const char* info[] = {"Block before crypt", "Block after crypt",
 
 
 Debug* init(int blocks){
-  Debug* new = (Debug*)malloc(sizeof(Debug));
+  Debug* new = (Debug*)malloc((blocks + 1) * sizeof(Debug));
   new->blocks_num = blocks;
   new->key = (unsigned int*)malloc(3 * sizeof(unsigned int));
   new->real_num = 0;
-  new->all = (unsigned int*)malloc(14 * blocks);
+  new->all = (unsigned int*)malloc(20 * blocks * sizeof(unsigned int));
+  new->res = (unsigned int*)malloc(blocks * sizeof(unsigned int));
   return new;
 }
 
@@ -23,9 +24,9 @@ Debug* init(int blocks){
 void print_debug(Debug* debug, int crypt_mode, char mode){
   int mess[7] = {6, 3, 4, 2, 7};
   int num_mes, ind, count = 5;
-  printf("KEY0:   %x\n", debug->skey);
-  printf("KEY1:   %x\n", debug->key[0]);
-  printf("KEY2:   %x\n", debug->key[1]);
+  printf("KEY0:   %08x\n", debug->skey);
+  printf("KEY1:   %08x\n", debug->key[0]);
+  printf("KEY2:   %08x\n", debug->key[1]);
   if (crypt_mode == 1 && mode == 'e'){
     num_mes = 5;
   }
@@ -36,7 +37,7 @@ void print_debug(Debug* debug, int crypt_mode, char mode){
     mess[3] = 3;
   }
   else if (crypt_mode == 1 && mode == 'c'){
-    printf("IV:   %x\n", debug->iv);
+    printf("IV:   %08x\n", debug->iv);
     num_mes = 6;
     mess[1] = 5;
     mess[2] = 3;
@@ -45,7 +46,7 @@ void print_debug(Debug* debug, int crypt_mode, char mode){
     mess[5] = 1;
   }
   else if (crypt_mode == 2 && mode == 'c'){
-    printf("IV:   %x\n", debug->iv);
+    printf("IV:   %08x\n", debug->iv);
     num_mes = 6;
     mess[2] = 4;
     mess[3] = 3;
@@ -53,14 +54,17 @@ void print_debug(Debug* debug, int crypt_mode, char mode){
     mess[1] = 2;
     mess[7] = 1;
   }
-  //printf("%s:   %x\n", info[0], debug->all[0]);
   for(int i = 0; i < debug->real_num; i++){
     ind = i % num_mes;
     printf("%d   ---   index mes\n", mess[ind]);
-    printf("%s:   %x\n", info[mess[ind]], debug->all[i]);
+    printf("%s:   %08x\n", info[mess[ind]], debug->all[i]);
   }
   printf("%d   --- num of mes\n", debug->real_num);
-  //printf("%s:   %x\n", info[1], debug->all[debug->real_num - 1]);
+  printf("RESULT:\n");
+  for (int i = 0; i < debug->blocks_num; i++){
+    printf("%08x", debug->res[i]);
+  }
+  printf("\n");
 }
 
 

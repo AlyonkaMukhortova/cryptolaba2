@@ -7,6 +7,7 @@ typedef struct Debug{
   int blocks_num;
   unsigned int iv;
   unsigned int* all;
+  unsigned int* res;
   unsigned int skey; //start key
   unsigned int * key; //round keys
 }Debug;

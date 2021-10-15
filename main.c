@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <time.h>
+
 #include "debug.h"
 
 #define SUCCESS 0
@@ -38,19 +39,12 @@ char* fgetstr (FILE* fd) {
 	*ptr = '\0';
 	do {
 		n = fscanf(fd, "%80[^\n]", buf);
-		//if (n < 0) {
-		//	free(ptr);
-		//	ptr = NULL;
-		//	continue;
-			//break;
-		//}
 		if (n == 0) {
 			fscanf(fd, "%*c");
-			//break;
 		}
 		else if (n>0){
 			len += strlen(buf);
-			ptr = (char*)realloc(ptr, len + 1);
+			ptr = (char*)realloc(ptr, len + 2);
 			int k = strlen(buf);
 			int l = strlen(ptr) + k + 1;
 			strncat(ptr,buf, k);
@@ -83,8 +77,9 @@ unsigned int hex_from_str (char* arg, int* err) {
 }
 
 
-char* str_from_hex (unsigned int hex, long int size) {
-  char* res = (char*)malloc(size + 1);
+char* str_from_hex (char* block, unsigned int hex, long int size) {
+	char* res;
+  res = (char*)malloc(size + 1);
   int a = 0;
   for(int i = 1; i<size + 1; i++){
       a = hex % 16;
@@ -92,16 +87,14 @@ char* str_from_hex (unsigned int hex, long int size) {
 			   res[size - i] = a + '0';
       else
         res[size - i] = 'a' + a -10;
-    //printf("symbol = %c\n", res[size - i]);
 		hex = hex >> 4;
 	}
 	res[size] = '\0';
-  //printf("str hex = %s\n", res);
   return res;
 }
 
 
-int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, int* crypt_mode, char* mode, int* debugger) {
+int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, int* crypt_mode, char* mode, int* debugger, int* timing) {
   const struct option long_options[] = {
     {"help", no_argument, NULL, 'h'},
     {"version", no_argument, NULL, 'v'},
@@ -111,16 +104,15 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
     {"key", required_argument, NULL, 'k'},
     {"iv", required_argument, NULL, 'i'},
     {"debug", no_argument, NULL, 'g'},
+		{"time", no_argument, NULL, 't'},
     {NULL, 0, NULL, 0}
   };
-	key[0] = '\0';
-	iv[0] = '\0';
-  const char* short_options = "hvm:edk:i:g";
-  int wrong = 0;
+	int key_here = 0, iv_here = 0;
+  const char* short_options = "thvm:edk:i:g";
+  int wrong = 1;
   while (optind < argc - 1 || optind < 2){
     int cc = getopt_long(argc, argv, short_options, long_options, NULL);
     char c = cc;
-    printf("option = %c\n", c);
     switch (c) {
       case 'h': {
         printf("-v, --version for software version\n");
@@ -129,15 +121,17 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
         printf("-d, --dec flag for decryption mode\n");
         printf("-k, --key=[value] for key init\n");
         printf("-i, --iv=[value] for initialization vector\n");
-        printf("-g, --debug for intermediate values\n");
-        return NO_ARGS;
+        printf("-g, --debug for debug values\n");
+				printf("-t, --time for timing\n");
+				wrong = 0;
+				continue;
       }
       case 'v':{
         printf("Software version 1.0\n");
-				return NO_ARGS;
+				wrong = 0;
+				continue;
       }
       case 'm':{
-        printf("arg of option m = %s\n", optarg);
         if (strcmp(optarg, "ecb") == 0){
           *mode = 'e';
         }
@@ -159,17 +153,17 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
       }
       case 'k':{
         int err = 0;
+				key_here = 1;
         *key = hex_from_str(optarg, &err);
         if (err == WRONG_VALUE){
 					return WRONG_VALUE;
         }
-        printf("key = %x\n", *key);
         continue;
       }
       case 'i':{
+				iv_here = 1;
         int err1 = 0;
         *iv = hex_from_str(optarg, &err1);
-				printf("iv = %x\n", *iv);
         if (err1 == WRONG_VALUE){
 					return WRONG_VALUE;
         }
@@ -177,15 +171,25 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
       }
       case 'g':{
 				*debugger = 1;
+				continue;
       }
+			case 't':{
+				wrong = 0;
+				*timing = 31;
+				continue;
+			}
       case -1:{
+				argc--;
 				optind++;
 				break;
       }
     }
   }
-	if (*mode == '\0' || *crypt_mode == 0 || *key == '\0' || (*iv == '\0' && *mode == 'c'))
-		return WRONG_VALUE;
+	if (*mode == '\0' || *crypt_mode == 0 || key_here == 0 || (iv_here == 0 && *mode == 'c'))
+		if(wrong == 1)
+			return WRONG_VALUE;
+		else
+			return NO_ARGS;
   return 0;
 }
 
@@ -345,11 +349,11 @@ void make_block (char** block, char* p, unsigned int* ptr, int* err, Debug* debu
 
 void res_block(int k, char** res, unsigned int ptr, char** p, int i){
 	if (k == 0){
-		strncpy(*res, str_from_hex(ptr, 8), 8);
+		strncpy(*res, str_from_hex(NULL, ptr, 8), 8);
 		(*res)[8] = '\0';
 	}
 	else{
-		strncat(*res, str_from_hex(ptr, 8), 8);
+		strncat(*res, str_from_hex(NULL, ptr, 8), 8);
 	}
 }
 
@@ -357,7 +361,6 @@ unsigned int cbc_round(unsigned int* s_substitution, unsigned int ptr, unsigned 
 	 									unsigned int* iv, unsigned int iv1, int i, int crypt_mode, int k, Debug* debug){
 	debug->all[debug->real_num] = ptr;
 	debug->real_num++;
-	//printf("%d\n", debug->real_num);
 	if (crypt_mode == 1){
 		ptr = encryption_cbc_round(s_substitution, ptr, key[i + 1], *iv, debug);
 	}
@@ -371,7 +374,6 @@ unsigned int cbc_round(unsigned int* s_substitution, unsigned int ptr, unsigned 
 unsigned int ecb_round(unsigned int* s_substitution, unsigned int ptr, unsigned int* key, int i, int crypt_mode, Debug* debug){
 	debug->all[debug->real_num] = ptr;
 	debug->real_num++;
-	//printf("before round %d\n", debug->real_num);
 	if (crypt_mode == 1){
 		ptr = encryption_ecb_round(s_substitution, ptr, key[i + 1], debug);
 	}
@@ -385,7 +387,7 @@ unsigned int ecb_round(unsigned int* s_substitution, unsigned int ptr, unsigned 
 char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv, int blocks,
 				int rounds, unsigned int iv1, unsigned int ptr, char* res, char* block, int err, char*first,
 				int crypt_mode, char mode, Debug* debug){
-	unsigned int iv0 = iv;
+	unsigned int iv0 = iv, pu = 0;
   for (int i = 0; i < blocks; i++){
 		make_block (&block, p, &ptr, &err, debug);
 
@@ -398,11 +400,7 @@ char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned 
 		if (crypt_mode == 1){
 			ptr = ptr ^ key[0];
 		}
-		//ptr = ptr ^ key[0];
-
-
     for (int k = 0; k < rounds; k++){
-
 			if (mode == 'e'){
 				ptr = ecb_round (s_substitution, ptr, key, k, crypt_mode, debug);
 			}
@@ -411,10 +409,7 @@ char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned 
 			}
 			debug->all[debug->real_num] = ptr;
 			debug->real_num++;
-			//printf("after round %d\n", debug->real_num);
     }
-
-
 		if (crypt_mode == 1){
 			iv0 = ptr;
 		}
@@ -424,9 +419,10 @@ char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned 
 		if (mode == 'c' && crypt_mode == 2){
 			ptr = ptr ^ iv;
 		}
-		printf("%x", ptr);
-		//debug->all[debug->real_num] = p;
-		//debug->real_num++;
+		printf("%08x", ptr);
+		debug->res[i] = ptr;
+		block = str_from_hex(block, ptr, 8);
+		res = strncat(res, block, 8);
 		iv = iv0;
 		p+=8;
   }
@@ -480,7 +476,7 @@ char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned
 	load(argc, argv, &p, crypt_mode, mode, &s_substitution);
 	long int size = strlen(p);
 	char* first = p;
-	char* res = (char*)malloc(1);//(size/8 + 1) * 8 + 1);
+	char* res = (char*)malloc((size/8 + 1) * 8 + 1);
 	char* block = (char*)malloc(9);
 	unsigned int ptr = 0, iv1 = iv;
   int rounds = 2, err = 0, blocks = size / 8;
@@ -500,6 +496,8 @@ char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned
 	if (debugger == 1)
 		print_debug(debug, crypt_mode, mode);
 	free(s_substitution);
+	free(block);
+	free(first);
 	delete_debug(debug);
   return p;
 }
@@ -516,24 +514,79 @@ unsigned int* key_calculation (unsigned int k, unsigned int* key) {
   return key;
 }
 
+int D_Timing()
+{
+	unsigned int* key = (unsigned int*)calloc(3, sizeof(unsigned int));
+	int n = 10, k= 0, cnt = 100000, i, m, z;
+	clock_t first, last;
+	unsigned int* s_substitution = (unsigned int*)malloc(256 * sizeof(unsigned int));
+	key = key_calculation(k, key);
+	straight_subs(&s_substitution);
+	Debug* debug = init(1);
+	unsigned int p, iv = 0;
+	srand(time(NULL));
+	first = clock();
+	while (n-- > 0) {
+		for (i = 0; i < cnt; ) {
+			p = rand() * rand();
+			p = p ^ key[0];
+	    for (int k = 0; k < 2; k++)
+					p = ecb_round (s_substitution, p, key, k, 1, debug);
+			i++;
+			debug->real_num = 0;
+		}
+		last = clock();
+		printf("ecb test #%d, number of blocks = %d, time = %ld\n", 10 - n, (10 -
+			n) * cnt, (last - first));
+	}
+	n = 10;
+	first = clock();
+	while (n-- > 0) {
+		for (i = 0; i < cnt; ) {
+			p = rand() * rand();
+			p = p ^ iv;
+			p = p ^ key[0];
+	    for (int k = 0; k < 2; k++)
+					p = ecb_round (s_substitution, p, key, k, 1, debug);
+			iv = p;
+			i++;
+			debug->real_num = 0;
+		}
+		last = clock();
+		printf("cbc test #%d, number of blocks = %d, time = %ld\n", 10 - n, (10 -
+			n) * cnt, (last - first));
+	}
+	delete_debug(debug);
+	free(key);
+	free(s_substitution);
+	return 1;
+}
+
 
 int main (int argc, char** argv) {
   unsigned int* key = (unsigned int*)calloc(3, sizeof(unsigned int));
   unsigned int k, iv;
   char * p, mode = '\0';
-  int crypt_mode = 0, debugger = 0;
-  int a = analyse_input(argc, argv, &k, &iv, &crypt_mode, &mode, &debugger);
+  int crypt_mode = 0, debugger = 0, timing = 0;
+  int a = analyse_input(argc, argv, &k, &iv, &crypt_mode, &mode, &debugger, &timing);
 	if(a == 0){
 	  key = key_calculation(k, key);
 	  p = init_n_cipher(argc, argv, p, key, iv, crypt_mode, mode, debugger);
-	  printf("%s\n", p);
+	  //printf("%s\n", p);
+		free(p);
 	}
 	else if (a == WRONG_VALUE){
 		printf("Something wrong in command. If you need help enter -h flag.\n");
+		printf("Correct form:\n");
+		printf("./cipher -m ecb -e -k f0f0f0f0 input > output\n");
 	}
-	else{
-		printf("Please, try again.\n");
+
+	else {
+		printf("Correct form for crypt text:\n");
+		printf("./cipher -m ecb -e -k f0f0f0f0 input > output\n");
 	}
-	printf ("That's all. Bye!\n");
+	if(timing == 31)
+		D_Timing();
+	free(key);
 	return 0;
 }
