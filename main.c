@@ -138,6 +138,9 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
         else if (strcmp(optarg, "cbc") == 0){
           *mode = 'c';
         }
+				else if (strcmp(optarg, "ofb") == 0){
+          *mode = 'o';
+        }
         else{
           return WRONG_VALUE;
         }
@@ -185,7 +188,7 @@ int analyse_input (int argc, char** argv, unsigned int* key, unsigned int* iv, i
       }
     }
   }
-	if (*mode == '\0' || *crypt_mode == 0 || key_here == 0 || (iv_here == 0 && *mode == 'c'))
+	if (*mode == '\0' || *crypt_mode == 0 || key_here == 0 || (iv_here == 0 && (*mode == 'c' || *mode == 'o')))
 		if(wrong == 1)
 			return WRONG_VALUE;
 		else
@@ -302,8 +305,7 @@ unsigned int decryption_ecb_round (unsigned int* s_substitution, unsigned int p,
 
 unsigned int encryption_cbc_round (unsigned int* s_substitution, unsigned int p, unsigned int key, unsigned int iv, Debug* debug) {
   int count = 2;
-	debug->all[debug->real_num] = p;
-	debug->real_num++;
+
 	p = s_block(p, s_substitution, count);
 	debug->all[debug->real_num] = p;
 	debug->real_num++;
@@ -387,9 +389,15 @@ unsigned int ecb_round(unsigned int* s_substitution, unsigned int ptr, unsigned 
 char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned int iv, int blocks,
 				int rounds, unsigned int iv1, unsigned int ptr, char* res, char* block, int err, char*first,
 				int crypt_mode, char mode, Debug* debug){
-	unsigned int iv0 = iv, pu = 0;
+	unsigned int iv0 = iv, pu = 0, iv_const = iv;
   for (int i = 0; i < blocks; i++){
 		make_block (&block, p, &ptr, &err, debug);
+
+		if (mode == 'o'){
+			crypt_mode = 1;
+			iv = ptr;
+			ptr = iv0;
+		}
 
 		if (crypt_mode == 2){
 			iv0 = ptr;
@@ -412,9 +420,15 @@ char* crypt (unsigned int* s_substitution, char* p, unsigned int* key, unsigned 
     }
 		if (crypt_mode == 1){
 			iv0 = ptr;
+
 		}
 		if(crypt_mode == 2){
 			ptr = ptr ^ key[0];
+
+		}
+		if (mode == 'o'){
+			iv0 = ptr;
+			ptr = ptr ^ iv;
 		}
 		if (mode == 'c' && crypt_mode == 2){
 			ptr = ptr ^ iv;
@@ -473,6 +487,9 @@ void load (int argc, char** argv, char** p, int crypt_mode, char mode, unsigned 
 
 char* init_n_cipher (int argc, char** argv, char* p, unsigned int* key, unsigned int iv, int crypt_mode, char mode, int debugger){
 	unsigned int* s_substitution = (unsigned int*)malloc(256 * sizeof(unsigned int));
+	if(mode == 'o'){
+		crypt_mode = 1;
+	}
 	load(argc, argv, &p, crypt_mode, mode, &s_substitution);
 	long int size = strlen(p);
 	char* first = p;
@@ -536,9 +553,11 @@ int D_Timing()
 			debug->real_num = 0;
 		}
 		last = clock();
-		printf("ecb test #%d, number of blocks = %d, time = %ld\n", 10 - n, (10 -
-			n) * cnt, (last - first));
+		printf("ecb test #%d, number of blocks = %d, time = %f ms\n", 10 - n, (10 -
+			n) * cnt, (double)((last - first) * 1000/CLOCKS_PER_SEC));
 	}
+	printf("BLOCKS PER SECOND IN ECB  --- >   %f\n", (10 -
+		n) * cnt * 1000 /(double)((last - first) * 1000/CLOCKS_PER_SEC));
 	n = 10;
 	first = clock();
 	while (n-- > 0) {
@@ -553,9 +572,11 @@ int D_Timing()
 			debug->real_num = 0;
 		}
 		last = clock();
-		printf("cbc test #%d, number of blocks = %d, time = %ld\n", 10 - n, (10 -
-			n) * cnt, (last - first));
+		printf("cbc test #%d, number of blocks = %d, time = %f ms\n", 10 - n, (10 -
+			n) * cnt, (double)((last - first) * 1000/CLOCKS_PER_SEC));
 	}
+	printf("BLOCKS PER SECOND IN CBC  --- >   %f\n", (10 -
+		n) * cnt * 1000 /(double)((last - first) * 1000/CLOCKS_PER_SEC));
 	delete_debug(debug);
 	free(key);
 	free(s_substitution);

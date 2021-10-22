@@ -15,7 +15,7 @@ Debug* init(int blocks){
   new->blocks_num = blocks;
   new->key = (unsigned int*)malloc(3 * sizeof(unsigned int));
   new->real_num = 0;
-  new->all = (unsigned int*)malloc(20 * blocks * sizeof(unsigned int));
+  new->all = (unsigned int*)malloc(24 * blocks * sizeof(unsigned int));
   new->res = (unsigned int*)malloc(blocks * sizeof(unsigned int));
   return new;
 }
@@ -36,28 +36,27 @@ void print_debug(Debug* debug, int crypt_mode, char mode){
     mess[2] = 4;
     mess[3] = 3;
   }
-  else if (crypt_mode == 1 && mode == 'c'){
+  else if (crypt_mode == 1 && (mode == 'c' || mode == 'o')){
     printf("IV:   %08x\n", debug->iv);
-    num_mes = 6;
-    mess[1] = 5;
-    mess[2] = 3;
-    mess[3] = 4;
-    mess[4] = 2;
-    mess[5] = 1;
+    num_mes = 5;
+    mess[1] = 3;
+    mess[2] = 4;
+    mess[3] = 2;
+    //mess[4] = 2;
+    mess[5] = 7;
   }
-  else if (crypt_mode == 2 && mode == 'c'){
+  else if (crypt_mode == 2 && (mode == 'c' || mode == 'o')){
     printf("IV:   %08x\n", debug->iv);
-    num_mes = 6;
+    num_mes = 5;
     mess[2] = 4;
     mess[3] = 3;
-    mess[4] = 5;
+    //mess[4] = 5;
     mess[1] = 2;
     mess[7] = 1;
   }
   for(int i = 0; i < debug->real_num; i++){
     ind = i % num_mes;
-    printf("%d   ---   index mes\n", mess[ind]);
-    printf("%s:   %08x\n", info[mess[ind]], debug->all[i]);
+    printf("%s:   %08x\n\n", info[mess[ind]], debug->all[i]);
   }
   printf("%d   --- num of mes\n", debug->real_num);
   printf("RESULT:\n");
